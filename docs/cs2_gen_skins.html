@@ -1,0 +1,385 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS2 Gen Skins</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            color: #ff6b35;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        #search-section {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            flex-wrap: wrap;
+        }
+        #searchInput, select {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+        #searchInput::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        #catalog {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 1rem;
+        }
+        #catalog button {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 107, 53, 0.2);
+            border: 1px solid #ff6b35;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #catalog button:hover, #catalog button.active {
+            background: #ff6b35;
+        }
+        .skins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .skin-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.6s ease-out;
+            cursor: grab;
+        }
+        .skin-card:hover {
+九、以下是翻译后的内容（从英文到中文）：
+
+        .skin-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(255, 107, 53, 0.3);
+        }
+        .skin-card:active {
+            cursor: grabbing;
+        }
+        .skin-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+        }
+        .skin-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .skin-card button {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background 0.3s;
+        }
+        .skin-card button:hover {
+            background: #e55a2b;
+        }
+        .dropzone {
+            min-height: 200px;
+            border: 2px dashed #ff6b35;
+            border-radius: 10px;
+            margin: 1rem;
+            padding: 1rem;
+            text-align: center;
+            background: rgba(255, 107, 53, 0.1);
+            transition: border-color 0.3s;
+        }
+        .dropzone.dragover {
+            border-color: #e55a2b;
+            background: rgba(255, 107, 53, 0.2);
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @media (max-width: 768px) {
+            #search-section {
+                flex-direction: column;
+                align-items: center;
+            }
+            .skins-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CS2 Gen Skins</h1>
+    </header>
+    <div id="search-section">
+        <input type="text" id="searchInput" placeholder="Buscar skins por nombre...">
+        <select id="weaponFilter">
+            <option value="">Todas las armas</option>
+        </select>
+        <select id="caseFilter">
+            <option value="">Todas las cajas</option>
+        </select>
+    </div>
+    <div id="catalog"></div>
+    <div id="skins-grid" class="skins-grid"></div>
+    <div id="favorites" class="dropzone skins-grid">
+        <p>Favoritos (arrastra skins aquí)</p>
+    </div>
+
+    <script>
+        const API_URL = 'https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins_not_grouped.json';
+        let allSkins = [];
+        let filteredSkins = [];
+        const weaponDefIndices = {
+            'Desert Eagle': 1,
+            'Dual Berettas': 2,
+            'Five-SeveN': 3,
+            'Glock-18': 4,
+            'AK-47': 7,
+            'AUG': 8,
+            'AWP': 9,
+            'FAMAS': 10,
+            'G3SG1': 11,
+            'Galil AR': 13,
+            'M249': 14,
+            'M4A4': 16,
+            'MAC-10': 17,
+            'P90': 19,
+            'MP5-SD': 23,
+            'UMP-45': 24,
+            'XM1014': 25,
+            'PP-Bizon': 26,
+            'MAG-7': 27,
+            'Negev': 28,
+            'Sawed-Off': 29,
+            'Tec-9': 30,
+            'P2000': 32,
+            'MP7': 33,
+            'MP9': 34,
+            'Nova': 35,
+            'P250': 36,
+            'SCAR-20': 38,
+            'SG 553': 39,
+            'SSG 08': 40,
+            'M4A1-S': 60,
+            'USP-S': 61,
+            'CZ75-Auto': 63,
+            'R8 Revolver': 64
+        };
+
+        async function loadData() {
+            try {
+                const response = await fetch(API_URL);
+                allSkins = await response.json();
+                const weapons = [...new Set(allSkins.map(s => s.weapon.name))].sort();
+                const catalogEl = document.getElementById('catalog');
+                catalogEl.innerHTML = weapons.map(w => `<button class="catalog-btn" onclick="filterByWeapon('${w}')">${w}</button>`).join('');
+                populateFilters();
+                filterSkins(); // Initial display
+            } catch (e) {
+                console.error('Error loading data:', e);
+            }
+        }
+
+        function populateFilters() {
+            const weaponSelect = document.getElementById('weaponFilter');
+            const weapons = [...new Set(allSkins.map(s => s.weapon.name))].sort();
+            weaponSelect.innerHTML = '<option value="">Todas las armas</option>' + weapons.map(w => `<option value="${w}">${w}</option>`).join('');
+            const casesSet = new Set();
+            allSkins.forEach(s => (s.crates || []).forEach(c => casesSet.add(c)));
+            const cases = Array.from(casesSet).sort();
+            const caseSelect = document.getElementById('caseFilter');
+            caseSelect.innerHTML = '<option value="">Todas las cajas</option>' + cases.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function filterByWeapon(weapon) {
+            document.querySelectorAll('.catalog-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('weaponFilter').value = weapon;
+            filterSkins();
+        }
+
+        function filterSkins() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const weapon = document.getElementById('weaponFilter').value;
+            const caseF = document.getElementById('caseFilter').value;
+            filteredSkins = allSkins.filter(s =>
+                s.name.toLowerCase().includes(search) &&
+                (!weapon || s.weapon.name === weapon) &&
+                (!caseF || (s.crates && s.crates.includes(caseF)))
+            );
+            displaySkins(filteredSkins);
+            loadPrices(filteredSkins);
+        }
+
+        function displaySkins(skins) {
+            const grid = document.getElementById('skins-grid');
+            grid.innerHTML = skins.slice(0, 50).map(skin => createSkinCard(skin)).join(''); // Limit for performance
+        }
+
+        function createSkinCard(skin) {
+            const rarityColor = skin.rarity.color;
+            const skinIdParts = skin.id.split('-');
+            const skinDef = skinIdParts.length > 1 ? parseInt(skinIdParts[1]) : 0;
+            const weaponName = skin.weapon.name;
+            let weaponDef = weaponDefIndices[weaponName];
+            if (!weaponDef && weaponName.includes('Knife')) {
+                weaponDef = 42;
+            }
+            const floatMin = skin.float_range ? skin.float_range.min : 0;
+            const floatMax = skin.float_range ? skin.float_range.max : 1;
+            const stattrak = skin.stattrak ? 1 : 0;
+            return `
+                <div class="skin-card" draggable="true" ondragstart="drag(event, '${JSON.stringify(skin).replace(/"/g, '&quot;')}')">
+                    <img src="${skin.image}" alt="${skin.name}" loading="lazy">
+                    <h3>${skin.name}</h3>
+                    <p>Rarity: <span style="color: ${rarityColor};">${skin.rarity.name}</span></p>
+                    <p id="price-${skin.id.replace(/[^a-zA-Z0-9]/g, '')}">Cargando precio...</p>
+                    <button onclick="generateInspect(${weaponDef}, ${skinDef}, ${floatMin}, ${floatMax}, ${stattrak})">Generar Código Inspect</button>
+                </div>
+            `;
+        }
+
+        async function loadPrices(skins) {
+            for (const skin of skins.slice(0, 20)) { // Limit to avoid rate limits
+                try {
+                    const res = await fetch(`https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name=${encodeURIComponent(skin.market_hash_name)}`);
+                    const data = await res.json();
+                    const pEl = document.getElementById(`price-${skin.id.replace(/[^a-zA-Z0-9]/g, '')}`);
+                    if (pEl) {
+                        pEl.innerHTML = `Precio: ${data.median_price ? '$' + data.median_price : 'N/A'}`;
+                    }
+                } catch (e) {
+                    console.error('Price fetch error:', e);
+                }
+            }
+        }
+
+        function generateInspect(weaponDef, skinDef, minFloat, maxFloat, stattrak) {
+            const seed = Math.floor(Math.random() * 1001);
+            const float = (Math.random() * (maxFloat - minFloat) + minFloat).toFixed(7);
+            let code = `!gen ${weaponDef} ${skinDef} ${seed} ${float}`;
+            if (stattrak) code += ' 1';
+            alert(`¡Código generado!\n\nConéctate a un servidor de inspect comunitario (ej: connect vertigo.epidemic.gg en consola).\nEn el chat, escribe: ${code}\n\nNota: Verifica el formato en el servidor específico. Algunos incluyen parámetros adicionales para StatTrak/Souvenir.`);
+        }
+
+        function drag(ev, skinData) {
+            ev.dataTransfer.setData('text/plain', skinData);
+        }
+
+        const dropzone = document.getElementById('favorites');
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const skinData = e.dataTransfer.getData('text/plain');
+            const skin = JSON.parse(skinData.replace(/&quot;/g, '"'));
+            const newCard = document.createElement('div');
+            newCard.innerHTML = createSkinCard(skin);
+            newCard.querySelector('.skin-card').ondragstart = null; // Disable drag in favorites
+            dropzone.appendChild(newCard.querySelector('.skin-card'));
+        });
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterSkins);
+        document.getElementById('weaponFilter').addEventListener('change', filterSkins);
+        document.getElementById('caseFilter').addEventListener('change', filterSkins);
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>
